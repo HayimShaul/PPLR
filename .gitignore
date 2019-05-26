@@ -1,0 +1,4 @@
+*.o
+test_helib
+test_zp
+output
