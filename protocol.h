@@ -3,6 +3,8 @@
 
 template<class Plaintext, class Ciphertext>
 void DataSource<Plaintext, Ciphertext>::encode_data() {
+	std::cout << "X (data source) = " << std::endl << _X << std::endl;
+
 	Matrix<Ciphertext> EncX;
 	EncX.resize(_X.cols(), _X.rows());
 	for (unsigned int col = 0; col < _X.cols(); ++col) {
@@ -17,6 +19,8 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 		Ency[i] = Ciphertext::static_from_int(_y[i].to_int());
 	}
 
+	std::cout << "encX (data source) = " << std::endl << EncX << std::endl;
+
 	_communication_channel->send_X_and_y_to_server1(EncX, Ency);
 }
 
@@ -26,11 +30,17 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 	Matrix<Ciphertext> A;
 	std::vector<Ciphertext> b;
 
+	std::cout << "X (server1) = " << std::endl << X << std::endl;
+
 	A = X.T() * X;
 	b = X.T() * y;
 
+	std::cout << "A (server1) = " << std::endl << A << std::endl;
+
 	_R.resize(A.cols(), A.rows());
 	draw(_R);
+
+	std::cout << "R (server1) = " << std::endl << _R << std::endl;
 
 	_r.resize(b.size());
 	draw(_r);
@@ -193,7 +203,7 @@ void Server1<Plaintext,Ciphertext>::toBits(Bits &bits, const Ciphertext &y) {
 	Plaintext r;
 
 	// draw r
-	r = r.from_int(random());
+	r.from_int(random());
 
 	Ciphertext _y(y);
 	_y -= r;

@@ -26,5 +26,5 @@ test_helib: test_helib.o
 	g++ $(CCFLAGS) -c  $(INCS) $<
 
 clean:
-	rm -f *.o test_zp
+	rm -f *.o test_zp test_helib
 

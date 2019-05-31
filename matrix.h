@@ -208,8 +208,8 @@ void mul(std::vector<Out> &out, const Matrix<In1> &m, const std::vector<In2> &v)
 	for (unsigned int i_row = 0; i_row < m.rows(); ++i_row) {
 		out[i_row] = 0;
 		for (unsigned int i_col = 0; i_col < m.cols(); ++i_col) {
-//			out[i_row] += v[i_row] * m(i_col, i_row);
-			out[i_row] +=  m(i_col, i_row) * v[i_col];
+//			out[i_row] +=  m(i_col, i_row) * v[i_col];
+			out[i_row] +=  v[i_col] * m(i_col, i_row);
 		}
 	}
 }
@@ -219,8 +219,10 @@ void mul(std::vector<Out> &out, const Matrix<In1> &m, const std::vector<In2> &v)
 template<class Number>
 void draw(Matrix<Number> &m) {
 	for (unsigned int i = 0; i < m.cols(); ++i)
-		for (unsigned int j = 0; j < m.cols(); ++j)
-			m(i,j).from_int(random());
+		for (unsigned int j = 0; j < m.cols(); ++j) {
+			int r = random();
+			m(i,j).from_int(r);
+		}
 }
 
 

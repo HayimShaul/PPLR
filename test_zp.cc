@@ -119,7 +119,7 @@ int myrand(int min, int max) {
 
 template<class Num>
 void encode(Num &n, float f) {
-	n = n.from_int(int(f));
+	n.from_int(int(f));
 	return;
 
 	int best_num = 0;
