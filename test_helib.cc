@@ -12,6 +12,8 @@
 #include "vector.h"
 #include "crt.h"
 
+#include "times.h"
+
 #include "data_source.h"
 #include "server1.h"
 #include "server2.h"
@@ -162,8 +164,11 @@ int main(int argc, char **argv) {
 	std::string in("");
 	int dim = 4;
 	int lines = 6;
+	long L = 5;
 
 	for (int argc_i = 0; argc_i < argc; ++argc_i) {
+		if (memcmp(argv[argc_i], "--L=", 4) == 0)
+			L = atoi(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--p=", 4) == 0)
 			p = atoi(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--n=", 4) == 0)
@@ -176,6 +181,7 @@ int main(int argc, char **argv) {
 			in = std::string(argv[argc_i] + 5);
 
 		if (strcmp(argv[argc_i], "--help") == 0) {
+			std::cout << "   --L=5 level of key" << std::endl;
 			std::cout << "   --p=101 first prime" << std::endl;
 			std::cout << "   --n=1 number of primes for CRT" << std::endl;
 			std::cout << "   --in= input file (blank means random)" << std::endl;
@@ -224,8 +230,6 @@ int main(int argc, char **argv) {
 		std::cout << "prime " << i_prime << " = " << prime << std::endl;
 		ringSize *= prime;
 
-		long L = 5;
-
 		HelibKeys keys;
 		long R = 1;
 		long p = prime;
@@ -238,9 +242,11 @@ int main(int argc, char **argv) {
 		Vec<long> gens;
 		Vec<long> ords;
 
+		Times::start_phase1_step1();
 		keys.initKeys(s, R, p, r, d, c, k, 64, L, chosen_m, gens, ords);
 		HelibNumber::set_global_keys(&keys);
 		Plaintext::set_global_p(p);
+		Times::end_phase1_step1();
 
 		try {
 			std::vector<int> linRegModelInt;
@@ -272,11 +278,16 @@ int main(int argc, char **argv) {
 	std::cout << "computed model after rational recontruction = ";
 	for (unsigned int i = 0; i < modelCrtDecoded.size(); ++i) {
 		int num, denom;
+		Times::start_phase2_step3();
 		rational_reconstruction(num, denom, modelCrtDecoded[i], ringSize);
+		Times::end_phase2_step3();
 		std::cout << ((!i)?"":", ");
 		std::cout << num << "/" << denom;
 	}
 	std::cout << std::endl;
+
+
+	Times::print(std::cout);
 
 	return 0;
 }

@@ -15,6 +15,7 @@ public:
 		_server2.setCommunicationChannel(this);
 	}
 
+	void send_A_and_b_to_server1(const Matrix<Ciphertext> &A, const std::vector<Ciphertext> &b) { _server1.receive_fraction_of_A_and_b(A, b); }
 	void send_X_and_y_to_server1(const Matrix<Ciphertext> &A, const std::vector<Ciphertext> &b) { _server1.receive_X_and_y_from_data_source(A, b); }
 	void send_Aprime_and_bprime_to_server2(const Matrix<Ciphertext> &A, const std::vector<Ciphertext> &b) { _server2.receive_A_and_bfrom_server1(A, b); }
 	void send_w_to_DataSource(const std::vector<Ciphertext> &v) { _dataSource.receive_w_from_server1(v); }

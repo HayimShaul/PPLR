@@ -16,10 +16,10 @@ INCS = $(JSONDIR) -I$(NTLINCDIR) -I$(FHEINCDIR) -I$(LIPHEINCDIR)
 
 all: test_zp test_helib
 
-test_zp: test_zp.o
+test_zp: test_zp.o times.o
 	g++ $(LDFLAGS) -o $@ $^ $(LIBS)
 
-test_helib: test_helib.o
+test_helib: test_helib.o times.o
 	g++ $(LDFLAGS) -o $@ $^ $(LIBS)
 
 %.o: %.cc

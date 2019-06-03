@@ -6,6 +6,15 @@ void draw(std::vector<Number> &v) {
 }
 
 template<class Number>
+void operator+=(std::vector<Number> &v1, const std::vector<Number> &v2) {
+	assert(v1.size() == v2.size());
+
+	for (unsigned int i = 0; i < v1.size(); ++i)
+		v1[i] += v2[i];
+}
+
+
+template<class Number>
 std::vector<Number> operator-(const std::vector<Number> &v1, const std::vector<Number> &v2) {
 	assert(v1.size() == v2.size());
 

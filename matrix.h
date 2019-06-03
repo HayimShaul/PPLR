@@ -74,6 +74,14 @@ public:
 //		return ret;
 	}
 
+	void operator+=(const Matrix<Number> &a) {
+		assert(cols() == a.cols());
+		assert(rows() == a.rows());
+		for (unsigned int col = 0; col < cols(); ++col)
+			for (unsigned int row = 0; row < rows(); ++row)
+				(*this)(col, row) += a(col,row);
+	}
+
 	unsigned int cols() const { return _data.size(); }
 	unsigned int rows() const { return _data[0].size(); }
 

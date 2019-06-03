@@ -12,6 +12,9 @@ private:
 	Matrix<Ciphertext> _X;
 	std::vector<Ciphertext> _y;
 
+	Matrix<Ciphertext> _A;
+	std::vector<Ciphertext> _b;
+
 	std::vector<Ciphertext> _wprime;
 	Matrix<Ciphertext> _Aprimeinv;
 
@@ -21,6 +24,7 @@ public:
 
 	void setCommunicationChannel(Communication<Plaintext, Ciphertext> *c) { _communication_channel = c; }
 
+	void receive_fraction_of_A_and_b(const Matrix<Ciphertext> &a, const std::vector<Ciphertext> &b);
 	void receive_X_and_y_from_data_source(const Matrix<Ciphertext> &a, const std::vector<Ciphertext> &b) { _X = a; _y = b; }
 	void receive_w_and_A_from_server2(const std::vector<Ciphertext> &w, const Matrix<Ciphertext> &A) { _wprime = w; _Aprimeinv = A; }
 
