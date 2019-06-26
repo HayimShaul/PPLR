@@ -4,23 +4,41 @@
 
 template<class Plaintext, class Ciphertext>
 void DataSource<Plaintext, Ciphertext>::encode_data() {
-	std::cout << "X (data source) = " << std::endl << _X << std::endl;
 
+	Matrix<Plaintext> tempA(_X.cols(), _X.cols());
+	std::vector<Plaintext> tempb(_X.cols());
+
+	for (unsigned int col = 0; col < _X.cols(); ++col)
+		for (unsigned int row = 0; row < _X.cols(); ++row)
+			tempA(col, row).from_int(0);
+
+	for (unsigned int col = 0; col < _X.cols(); ++col)
+		tempb[col].from_int(0);
+
+	Matrix<Ciphertext> A(_X.cols(), _X.cols());
+	std::vector<Ciphertext> b(_X.cols());
+
+	Times::start_phase1_step2();
 	for (unsigned int i = 0; i < _X.rows(); ++i) {
-		Matrix<Ciphertext> tempA(_X.cols(), _X.cols());
-		std::vector<Ciphertext> tempb;
 
-		Times::start_phase1_step2();
 		for (unsigned int col = 0; col < _X.cols(); ++col)
 			for (unsigned int row = 0; row < _X.cols(); ++row)
-				tempA(col, row).from_int(_X(col,i).to_int() * _X(row,i).to_int());
+				tempA(col, row) += (_X(col,i).to_int() * _X(row,i).to_int());
 
 		for (unsigned int col = 0; col < _X.cols(); ++col)
-			tempb[col].from_int(_X(col,i).to_int() * _y[i].to_int());
-		Times::end_phase1_step2();
-
-		_communication_channel->send_A_and_b_to_server1(tempA, tempb);
+			tempb[col] += (_X(col,i).to_int() * _y[i].to_int());
 	}
+
+	for (unsigned int col = 0; col < _X.cols(); ++col)
+		for (unsigned int row = 0; row < _X.cols(); ++row)
+			A(col, row).from_int(tempA(col, row).to_int());
+
+	for (unsigned int col = 0; col < _X.cols(); ++col)
+		tempb[col].from_int(b[col].to_int());
+	Times::end_phase1_step2();
+
+
+	_communication_channel->send_A_and_b_to_server1(A, b);
 }
 
 template<class Plaintext, class Ciphertext>
@@ -45,17 +63,17 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 	Matrix<Ciphertext> Aprime;
 	std::vector<Ciphertext> bprime;
 
-	Times::start_phase2_step1();
 	draw(_R);
 	draw(_r);
 
+	Times::start_phase2_step1();
 	mul(Aprime, _R, _A);
 
 	mul(bprime, _R, _b);
 	add(bprime, _r);
-	Times::start_phase2_step1();
+	Times::end_phase2_step1();
 
-//	std::cout << "A' (server1) = " << std::endl << Aprime << std::endl;
+	std::cout << "A' (server1) = " << std::endl << Aprime << std::endl;
 
 	_communication_channel->send_Aprime_and_bprime_to_server2(Aprime, bprime);
 }
@@ -72,7 +90,7 @@ void Server2<Plaintext, Ciphertext>::solve() {
 			Aprime(col, row) = _EncAprime(col, row).to_int();
 		}
 	}
-//	std::cout << "A' = " << std::endl << Aprime << std::endl;
+	std::cout << "(server2) A' = " << std::endl << Aprime << std::endl;
 
 	bprime.resize(_Encbprime.size());
 	for (unsigned int i = 0; i < bprime.size(); ++i) {
@@ -90,10 +108,12 @@ void Server2<Plaintext, Ciphertext>::solve() {
 		}
 	}
 
-//	std::cout << "A'^-1 = " << std::endl << Aprimeinv << std::endl;
+	std::cout << "(server2) A'^-1 = " << std::endl << Aprimeinv << std::endl;
 
 	std::vector<Plaintext> wprime;
 	mul(wprime, Aprimeinv, bprime);
+
+	std::cout << "(server2) w' = " << std::endl << wprime << std::endl;
 
 //	print((std::cout << "b' = "), bprime) << std::endl;
 //	print((std::cout << "w' = "), wprime) << std::endl;
@@ -116,6 +136,17 @@ void Server1<Plaintext, Ciphertext>::unmask(const Matrix<Ciphertext> &X, const s
 	mul(temp, _Aprimeinv, _r);
 	Encw = _wprime - temp;
 	Times::end_phase2_step3();
+
+	std::cout << "(server1) _wprime = ";
+	for (unsigned int i = 0; i << _wprime.size(); ++i)
+		std::cout << _wprime[i].to_int() << " ";
+	std::cout << std::endl;
+
+	std::cout << "(server1) A'^-1 = " << std::endl << _Aprimeinv << std::endl;
+	std::cout << "(server1) Encw = ";
+	for (unsigned int i = 0; i << Encw.size(); ++i)
+		std::cout << Encw[i].to_int() << " ";
+	std::cout << std::endl;
 }
 
 

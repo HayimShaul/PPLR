@@ -27,6 +27,7 @@ typedef ZP<1> Plaintext;
 //typedef UnsignedWord<7, Ciphertext> Bits;
 //typedef int Plaintext;
 
+#include "linear_regression.h"
 
 unsigned int countLines(const std::string &fname) {
 	std::ifstream inFile(fname); 
@@ -99,71 +100,13 @@ int myrand(int min, int max) {
 	return min + (random() % (max - min));
 }
 
-template<class Num>
-void encode(Num &n, float f) {
-	n.from_int(int(f));
-	std::cout << "encoding " << int(f) << " into " << n.to_int() << std::endl;
-	return;
-
-	int best_num = 0;
-	int best_denom = 1;
-	for (int num = 0; num < 6; ++num) {
-		for (int denom = 1; denom < 6; ++denom) {
-			if (abs((float)num/denom - f) < abs((float)best_num/best_denom)) {
-				best_num = num;
-				best_denom = denom;
-			}
-		}
-	}
-
-	n = best_num + power(best_denom, n.get_ring_size() - 2);
-}
-
-
-std::vector<int> linearRegression(const Matrix<float> &X, const std::vector<float> &y) {
-	Matrix<Plaintext> encX;
-	std::vector<Plaintext> ency;
-
-	encX.resize(X.cols(), X.rows());
-	ency.resize(y.size());
-	for (unsigned int j = 0; j < X.rows(); ++j) {
-		encode(ency[j], y[j]);
-		for (unsigned int i = 0; i < X.cols(); ++i) {
-			encode(encX(i,j), X(i,j));
-		}
-	}
-
-
-	DataSource<Plaintext, Ciphertext> dataSource(encX, ency);
-	Server1<Plaintext, Ciphertext> server1;
-	Server2<Plaintext, Ciphertext> server2;
-
-	Communication<Plaintext, Ciphertext> communication(dataSource, server1, server2);
-
-	dataSource.encode_data();
-
-	server1.linear_regression();
-
-//	server1.mask();
-//	server2.solve();
-//	server1.unmask();
-
-	std::vector<Plaintext> dec;
-	dataSource.decrypt(dec);
-
-	std::vector<int> ret(dec.size());
-	for (unsigned int i = 0; i < ret.size(); ++i)
-		ret[i] = dec[i].to_int();
-
-	return ret;
-}
 
 int main(int argc, char **argv) {
 	int p = 101;
 	int primeNumber = 1;
 	std::string in("");
 	int dim = 4;
-	int lines = 6;
+	int lines = 20;
 	long L = 5;
 
 	for (int argc_i = 0; argc_i < argc; ++argc_i) {

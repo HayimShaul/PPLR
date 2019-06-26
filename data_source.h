@@ -4,6 +4,8 @@
 template<typename Plaintext, typename Ciphertext>
 class Communication;
 
+const int DATA_SOURCE_NUMBER = 10;
+
 template<class Plaintext, class Ciphertext>
 class DataSource {
 private:
@@ -15,7 +17,8 @@ private:
 	Communication<Plaintext, Ciphertext> *_communication_channel;
 public:
 	DataSource() {}
-	DataSource(const Matrix<Plaintext> &m, std::vector<Plaintext> &v) : _X(m), _y(v) {}
+
+	void set_data(const Matrix<Plaintext> &m, std::vector<Plaintext> &v) { _X = m; _y = v; }
 
 	void setCommunicationChannel(Communication<Plaintext, Ciphertext> *c) { _communication_channel = c; }
 
