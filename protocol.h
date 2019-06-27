@@ -34,9 +34,8 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 			A(col, row).from_int(tempA(col, row).to_int());
 
 	for (unsigned int col = 0; col < _X.cols(); ++col)
-		tempb[col].from_int(b[col].to_int());
+		b[col].from_int(tempb[col].to_int());
 	Times::end_phase1_step2();
-
 
 	_communication_channel->send_A_and_b_to_server1(A, b);
 }
@@ -68,12 +67,9 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 
 	Times::start_phase2_step1();
 	mul(Aprime, _R, _A);
-
 	mul(bprime, _R, _b);
 	add(bprime, _r);
 	Times::end_phase2_step1();
-
-	std::cout << "A' (server1) = " << std::endl << Aprime << std::endl;
 
 	_communication_channel->send_Aprime_and_bprime_to_server2(Aprime, bprime);
 }
@@ -90,7 +86,6 @@ void Server2<Plaintext, Ciphertext>::solve() {
 			Aprime(col, row) = _EncAprime(col, row).to_int();
 		}
 	}
-	std::cout << "(server2) A' = " << std::endl << Aprime << std::endl;
 
 	bprime.resize(_Encbprime.size());
 	for (unsigned int i = 0; i < bprime.size(); ++i) {
@@ -108,15 +103,8 @@ void Server2<Plaintext, Ciphertext>::solve() {
 		}
 	}
 
-	std::cout << "(server2) A'^-1 = " << std::endl << Aprimeinv << std::endl;
-
 	std::vector<Plaintext> wprime;
 	mul(wprime, Aprimeinv, bprime);
-
-	std::cout << "(server2) w' = " << std::endl << wprime << std::endl;
-
-//	print((std::cout << "b' = "), bprime) << std::endl;
-//	print((std::cout << "w' = "), wprime) << std::endl;
 
 	std::vector<Ciphertext> Encwprime;
 	Encwprime.resize(wprime.size());
@@ -136,17 +124,6 @@ void Server1<Plaintext, Ciphertext>::unmask(const Matrix<Ciphertext> &X, const s
 	mul(temp, _Aprimeinv, _r);
 	Encw = _wprime - temp;
 	Times::end_phase2_step3();
-
-	std::cout << "(server1) _wprime = ";
-	for (unsigned int i = 0; i << _wprime.size(); ++i)
-		std::cout << _wprime[i].to_int() << " ";
-	std::cout << std::endl;
-
-	std::cout << "(server1) A'^-1 = " << std::endl << _Aprimeinv << std::endl;
-	std::cout << "(server1) Encw = ";
-	for (unsigned int i = 0; i << Encw.size(); ++i)
-		std::cout << Encw[i].to_int() << " ";
-	std::cout << std::endl;
 }
 
 

@@ -125,6 +125,8 @@ int main(int argc, char **argv) {
 	int p = 101;
 	int primeNumber = 1;
 	std::string in("");
+	int lines = 20;
+	int dim = 4;
 
 	for (int argc_i = 0; argc_i < argc; ++argc_i) {
 		if (memcmp(argv[argc_i], "--p=", 4) == 0)
@@ -133,11 +135,17 @@ int main(int argc, char **argv) {
 			primeNumber = atoi(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--in=", 5) == 0)
 			in = std::string(argv[argc_i] + 5);
+		if (memcmp(argv[argc_i], "--d=", 4) == 0)
+			dim = atoi(argv[argc_i] + 4);
+		if (memcmp(argv[argc_i], "--l=", 4) == 0)
+			lines = atoi(argv[argc_i] + 4);
 
 		if (strcmp(argv[argc_i], "--help") == 0) {
 			std::cout << "   --p=101 first prime" << std::endl;
 			std::cout << "   --n=1 number of primes for CRT" << std::endl;
 			std::cout << "   --in= input file (blank means random)" << std::endl;
+			std::cout << "   --d=4 dimension of model. If input is specified, d cannot be bigger than dimension of input" << std::endl;
+			std::cout << "   --l=4 number of lines. If input is specified, l cannot be bigger than lines of input" << std::endl;
 		}
 	}
 
@@ -148,17 +156,15 @@ int main(int argc, char **argv) {
 	if (in != std::string("")) {
 		read_csv_file(in, X, y);
 	} else {
-		int lines = 20;
-		int cols = 3;
-		std::vector<float> model(cols);
+		std::vector<float> model(dim);
 		std::cout << "The real model is:";
-		for (int i_col = 0; i_col < cols; ++i_col) {
+		for (int i_col = 0; i_col < dim; ++i_col) {
 			model[i_col] = myrand(0,5);
 			std::cout << " " << model[i_col];
 		}
 		std::cout << std::endl;
 
-		X.resize(cols, lines);
+		X.resize(dim, lines);
 		for (unsigned int i = 0; i < X.cols(); ++i) {
 			for (unsigned int j = 0; j < X.rows(); ++j) {
 				X(i,j) = myrand(0,10);
