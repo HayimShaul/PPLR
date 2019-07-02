@@ -123,4 +123,32 @@ std::vector<int> linearRegression(const Matrix<float> &X, const std::vector<floa
 //	return ret;
 //}
 
+template<class Plaintext, class Ciphertext>
+void test_simd() {
+	Matrix<Plaintext> L;
+	Matrix<Plaintext> R;
+
+	L.resize(3, 3);
+	R.resize(3, 3);
+
+	draw(R);
+	draw(L);
+
+	PackedMatrixSet<Ciphertext> Left;
+	PackedMatrixSet<Plaintext> Right;
+
+	Left.init_left_matrix(L);
+	Right.init_right_matrix(R);
+
+	PackedMatrix<Ciphertext> Res;
+	mul(Res, Left, Right);
+
+	Matrix<Ciphertext> Res_correct;
+	mul(Res_correct, L, R);
+
+	std::cout << "Correct Matrix is:" << std::endl << Res_correct << std::endl;
+	std::cout << "SIMD Matrix is:" << std::endl << Res << std::endl;
+
+}
+
 #endif

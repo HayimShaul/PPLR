@@ -1,5 +1,6 @@
 #include "times.h"
 #include "rational_reconstruction.h"
+#include "packed_matrix.h"
 
 
 template<class Plaintext, class Ciphertext>
@@ -64,6 +65,7 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 
 	draw(_R);
 	draw(_r);
+
 
 	Times::start_phase2_step1();
 	mul(Aprime, _R, _A);

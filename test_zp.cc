@@ -18,8 +18,8 @@
 
 #include "protocol.h"
 
-typedef ZP<1> Ciphertext;
-typedef ZP<1> Plaintext;
+typedef ZP<20> Ciphertext;
+typedef ZP<20> Plaintext;
 typedef UnsignedWord<7, Ciphertext> Bits;
 //typedef int Plaintext;
 
@@ -192,6 +192,7 @@ int main(int argc, char **argv) {
 
 		try {
 			std::vector<int> linRegModelInt;
+			test_simd<Plaintext, Ciphertext>();
 			linRegModelInt = linearRegression(X, y);
 
 			for (unsigned int i_col = 0; i_col < X.cols(); ++i_col) {
