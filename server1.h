@@ -15,8 +15,7 @@ private:
 	Matrix<Ciphertext> _A;
 	std::vector<Ciphertext> _b;
 
-	std::vector<Ciphertext> _wprime;
-	Matrix<Ciphertext> _Aprimeinv;
+	std::vector<Plaintext> _wprime;
 
 	Communication<Plaintext, Ciphertext> *_communication_channel;
 public:
@@ -26,10 +25,10 @@ public:
 
 	void receive_fraction_of_A_and_b(const Matrix<Ciphertext> &a, const std::vector<Ciphertext> &b);
 	void receive_X_and_y_from_data_source(const Matrix<Ciphertext> &a, const std::vector<Ciphertext> &b) { _X = a; _y = b; }
-	void receive_w_and_A_from_server2(const std::vector<Ciphertext> &w, const Matrix<Ciphertext> &A) { _wprime = w; _Aprimeinv = A; }
+	void receive_w_from_server2(const std::vector<Plaintext> &w) { _wprime = w; }
 
 	void mask(const Matrix<Ciphertext> &X, const std::vector<Ciphertext> &y);
-	void unmask(const Matrix<Ciphertext> &X, const std::vector<Ciphertext> y, std::vector<Ciphertext> &Encw);
+	void unmask(std::vector<Plaintext> &w);
 
 	void linear_regression();
 	void exhaustive_sparse_linear_regression();

@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
 
 		try {
 			std::vector<int> linRegModelInt;
-			test_simd<Plaintext, Ciphertext>();
+//			test_simd<Plaintext, Ciphertext>();
 			linRegModelInt = linearRegression(X, y);
 
 			for (unsigned int i_col = 0; i_col < X.cols(); ++i_col) {

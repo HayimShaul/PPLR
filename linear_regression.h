@@ -60,14 +60,14 @@ std::vector<int> linearRegression(const Matrix<float> &X, const std::vector<floa
 //	server2.solve();
 //	server1.unmask();
 
-	std::vector<Plaintext> dec;
-	for (unsigned int i = 0; i < dataSource.size(); ++i) {
-		dataSource[i].decrypt(dec);
-	}
+//	std::vector<Plaintext> dec;
+//	for (unsigned int i = 0; i < dataSource.size(); ++i) {
+//		dataSource[i].decrypt(dec);
+//	}
 
-	std::vector<int> ret(dec.size());
+	std::vector<int> ret(dataSource[0].w().size());
 	for (unsigned int i = 0; i < ret.size(); ++i)
-		ret[i] = dec[i].to_int();
+		ret[i] = dataSource[0].w()[i].to_int();
 
 	return ret;
 }
@@ -133,6 +133,9 @@ void test_simd() {
 
 	draw(R);
 	draw(L);
+
+	std::cout << "Left = " << std::endl << L << std::endl;
+	std::cout << "Right = " << std::endl << R << std::endl;
 
 	PackedMatrixSet<Ciphertext> Left;
 	PackedMatrixSet<Plaintext> Right;
