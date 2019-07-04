@@ -12,7 +12,7 @@ private:
 	Matrix<Plaintext> _X;
 	std::vector<Plaintext> _y;
 
-	std::vector<Ciphertext> _Encw;
+	std::vector<Plaintext> _w;
 
 	Communication<Plaintext, Ciphertext> *_communication_channel;
 public:
@@ -22,10 +22,13 @@ public:
 
 	void setCommunicationChannel(Communication<Plaintext, Ciphertext> *c) { _communication_channel = c; }
 
-	void receive_w_from_server1(const std::vector<Ciphertext> &v) { _Encw = v; }
+	void receive_w_from_server1(const std::vector<Plaintext> &v) { _w = v; }
 
 	void encode_data();
-	void decrypt(std::vector<Plaintext> &w);
+
+	const std::vector<Plaintext> &w() const { return _w; }
+
+//	void decrypt(std::vector<Plaintext> &w);
 };
 
 #endif

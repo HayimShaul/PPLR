@@ -24,7 +24,7 @@ public:
 		return a[i_item - i_ctxt * simd_factor];
 	}
 
-	void init_matrix(int rows, int cols) {
+	void init_matrix(int cols, int rows) {
 		_cols = cols;
 		_rows = rows;
 
@@ -54,10 +54,10 @@ public:
 
 		unsigned int i_simd = 0;
 		unsigned int i_ctxt = 0;
-		for (unsigned int i_row = 0; i_row < m.rows(); ++i_row) {
-			unsigned int row = (i_row + rot) % m.rows();
-			for (unsigned int col = 0; col < m.rows(); ++col) {
-				serialMat[i_simd] = m(row, col).to_int();
+		for (unsigned int row = 0; row < m.rows(); ++row) {
+			for (unsigned int i_col = 0; i_col < m.rows(); ++i_col) {
+				unsigned int col = (i_col + row + rot) % m.cols();
+				serialMat[i_simd] = m(col, row).to_int();
 				++i_simd;
 				if (i_simd == temp.simd_factor()) {
 					i_simd = 0;
@@ -90,11 +90,11 @@ public:
 
 		unsigned int i_simd = 0;
 		unsigned int i_ctxt = 0;
-		for (unsigned int row = 0; row < m.rows(); ++row) {
-			for (unsigned int i_col = 0; i_col < m.rows(); ++i_col) {
-				unsigned int col = (i_col + rot) % m.cols();
+		for (unsigned int i_row = 0; i_row < m.rows(); ++i_row) {
+			for (unsigned int col = 0; col < m.cols(); ++col) {
+				unsigned int row = (i_row + col + rot) % m.rows();
 
-				serialMat[i_simd] = m(row, col).to_int();
+				serialMat[i_simd] = m(col, row).to_int();
 				++i_simd;
 				if (i_simd == temp.simd_factor()) {
 					i_simd = 0;
@@ -161,7 +161,7 @@ public:
 			_mat[i].init_right_matrix(m, i);
 		}
 
-		std::cout << "Packed left matrix:" << std::endl;
+		std::cout << "Packed right matrix:" << std::endl;
 		for (unsigned int i = 0; i < m.cols(); ++i) {
 			std::cout << "   Rotation " << i << ":" << std::endl << _mat[i] << std::endl;
 		}
@@ -177,8 +177,14 @@ void add_mul(PackedMatrix<Out> &out, const PackedMatrix<In1> &left, const Packed
 	assert (out.cols() == right.cols());
 	assert(left._ctxt.size() == right._ctxt.size());
 
-	for (unsigned int i = 0; i < left._ctxt.size(); ++i)
+	for (unsigned int i = 0; i < left._ctxt.size(); ++i) {
+		Out temp = left._ctxt[i] * right._ctxt[i];
+		std::cout << " mul = " << temp << std::endl;
 		out._ctxt[i] += left._ctxt[i] * right._ctxt[i];
+		std::cout << " after adding = " << out._ctxt[i] << std::endl;
+	}
+
+	std::cout << " after adding = " << std::endl << out << std::endl;
 }
 
 template<class Out, class In1, class In2>
@@ -186,9 +192,10 @@ void mul(PackedMatrix<Out> &out, const PackedMatrixSet<In1> &left, const PackedM
 	assert(left.cols() == right.rows());
 	assert(left._mat.size() == right._mat.size());
 
-	out.init_matrix(left.rows(), right.cols());
+	out.init_matrix(left.cols(), right.rows());
 
 	for (unsigned int i = 0; i < right._mat.size(); ++i) {
+		std::cout << "   Adding  rotation " << i << std::endl;
 		add_mul(out, left._mat[i], right._mat[i]);
 	}
 }
@@ -197,7 +204,7 @@ template<class Number>
 std::ostream &operator<<(std::ostream &out, const PackedMatrix<Number> &m) {
 	for (unsigned int row = 0; row < m.rows(); ++row) {
 		for (unsigned int col = 0; col < m.cols(); ++col) {
-			out << m.to_int(row, col) << " ";
+			out << m.to_int(col, row) << " ";
 		}
 		out << std::endl;
 	}

@@ -68,9 +68,9 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 
 
 	Times::start_phase2_step1();
-	mul(Aprime, _R, _A);
-	mul(bprime, _R, _b);
-	add(bprime, _r);
+	mul(Aprime, _A, _R);
+	mul(bprime, _A, _r);
+	add(bprime, _b);
 	Times::end_phase2_step1();
 
 	_communication_channel->send_Aprime_and_bprime_to_server2(Aprime, bprime);
@@ -108,37 +108,32 @@ void Server2<Plaintext, Ciphertext>::solve() {
 	std::vector<Plaintext> wprime;
 	mul(wprime, Aprimeinv, bprime);
 
-	std::vector<Ciphertext> Encwprime;
-	Encwprime.resize(wprime.size());
-	for (unsigned int i = 0; i < wprime.size(); ++i) {
-		Encwprime[i] = Ciphertext::static_from_int(wprime[i].to_int());
-	}
 	Times::end_phase2_step2();
 
-	_communication_channel->send_wprime_and_Ainv_to_server1(Encwprime, EncAprimeinv);
+	_communication_channel->send_w_to_server1(wprime);
 }
 
 template<class Plaintext, class Ciphertext>
-void Server1<Plaintext, Ciphertext>::unmask(const Matrix<Ciphertext> &X, const std::vector<Ciphertext> y, std::vector<Ciphertext> &Encw) {
-	std::vector<Ciphertext> temp;
+void Server1<Plaintext, Ciphertext>::unmask(std::vector<Plaintext> &w) {
+	std::vector<Plaintext> temp;
 
 	Times::start_phase2_step3();
-	mul(temp, _Aprimeinv, _r);
-	Encw = _wprime - temp;
+	mul(w, _R, _wprime);
+	sub(w, _r);
 	Times::end_phase2_step3();
 }
 
 
-template<class Plaintext, class Ciphertext>
-void DataSource<Plaintext, Ciphertext>::decrypt(std::vector<Plaintext> &w) {
-	w.resize(_Encw.size());
-
-	Times::start_phase2_step3();
-	for (unsigned int i = 0; i < w.size(); ++i) {
-		w[i] = _Encw[i].to_int();
-	}
-	Times::end_phase2_step3();
-}
+//template<class Plaintext, class Ciphertext>
+//void DataSource<Plaintext, Ciphertext>::decrypt(std::vector<Plaintext> &w) {
+//	w.resize(_Encw.size());
+//
+//	Times::start_phase2_step3();
+//	for (unsigned int i = 0; i < w.size(); ++i) {
+//		w[i] = _Encw[i].to_int();
+//	}
+//	Times::end_phase2_step3();
+//}
 
 
 
@@ -146,13 +141,13 @@ void DataSource<Plaintext, Ciphertext>::decrypt(std::vector<Plaintext> &w) {
 
 template<class Plaintext, class Ciphertext>
 void Server1<Plaintext,Ciphertext>::linear_regression() {
-	std::vector<Ciphertext> Encw;
+	std::vector<Plaintext> w;
 
 	mask(_X, _y);
 	_communication_channel->server2_solve();
-	unmask(_X, _y, Encw);
+	unmask(w);
 
-	_communication_channel->send_w_to_DataSource(Encw);
+	_communication_channel->send_w_to_DataSource(w);
 }
 
 
