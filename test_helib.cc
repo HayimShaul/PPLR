@@ -102,7 +102,7 @@ int myrand(int min, int max) {
 
 
 int main(int argc, char **argv) {
-	int p = 101;
+	unsigned long p = 101;
 	int primeNumber = 1;
 	std::string in("");
 	int dim = 4;
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
 		if (memcmp(argv[argc_i], "--L=", 4) == 0)
 			L = atoi(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--p=", 4) == 0)
-			p = atoi(argv[argc_i] + 4);
+			p = atol(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--n=", 4) == 0)
 			primeNumber = atoi(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--d=", 4) == 0)
@@ -137,11 +137,11 @@ int main(int argc, char **argv) {
 
 	Matrix<float> X;
 	std::vector<float> y;
+	std::vector<float> model(dim);
 
 	if (in != std::string("")) {
 		read_csv_file(in, X, y);
 	} else {
-		std::vector<float> model(dim);
 		std::cout << "The real model is:";
 		for (int i_col = 0; i_col < dim; ++i_col) {
 			model[i_col] = myrand(0,5);
@@ -168,7 +168,11 @@ int main(int argc, char **argv) {
 	std::vector<std::vector<CrtDigit> > crtDigitsOfModel(X.cols());
 	int ringSize = 1;
 
-	int prime = Primes::find_prime_bigger_than(p-1);
+	unsigned long prime;
+	if (p < 1000000)
+		prime = Primes::find_prime_bigger_than(p-1);
+	else
+		prime = p;
 	for (int i_prime = 0; i_prime < primeNumber; ++i_prime) {
 		std::cout << "prime " << i_prime << " = " << prime << std::endl;
 		ringSize *= prime;
@@ -218,6 +222,8 @@ int main(int argc, char **argv) {
 	}
 	std::cout << std::endl;
 
+	bool ok = true;
+
 	std::cout << "computed model after rational recontruction = ";
 	for (unsigned int i = 0; i < modelCrtDecoded.size(); ++i) {
 		int num, denom;
@@ -226,11 +232,19 @@ int main(int argc, char **argv) {
 		Times::end_phase2_step3();
 		std::cout << ((!i)?"":", ");
 		std::cout << num << "/" << denom;
+
+		if (modelCrtDecoded[i] != model[i])
+			ok = false;
 	}
 	std::cout << std::endl;
 
 
 	Times::print(std::cout);
+
+	if (ok)
+		std::cout << "OK" << std::endl;
+	else
+		std::cout << "FAIL" << std::endl;
 
 	return 0;
 }
