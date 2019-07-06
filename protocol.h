@@ -66,6 +66,7 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 	draw(_R);
 	draw(_r);
 
+	std::cout << "server1 A = " << std::endl << _A << std::endl;
 
 	Times::start_phase2_step1();
 	mul(Aprime, _A, _R);
@@ -95,15 +96,6 @@ void Server2<Plaintext, Ciphertext>::solve() {
 	}
 
 	Matrix< Plaintext > Aprimeinv = Aprime.inverse();
-
-	Matrix<Ciphertext> EncAprimeinv;
-
-	EncAprimeinv.resize(Aprime.cols(), Aprimeinv.rows());
-	for (unsigned int col = 0; col < Aprimeinv.cols(); ++col) {
-		for (unsigned int row = 0; row < Aprimeinv.rows(); ++row) {
-			EncAprimeinv(col, row) = Ciphertext::static_from_int(Aprimeinv(col, row).to_int());
-		}
-	}
 
 	std::vector<Plaintext> wprime;
 	mul(wprime, Aprimeinv, bprime);

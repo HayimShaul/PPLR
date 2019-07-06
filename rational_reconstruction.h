@@ -28,8 +28,10 @@ inline void rational_reconstruction(int &num, int &denom, int quontient, int m) 
 //        int r1((u1-q*v1)), r2((u2-q*v2)), r3((u3-q*v3));
 		u1=v1; u2=v2; u3=v3;
 		v1=r1; v2=r2; v3=r3;
-		if (v2 > sqrt(m/2))
-			throw std::runtime_error(std::string("Error in rational reconstruction. Ring size is too small"));
+		if (v2 > sqrt(m/2)) {
+			std::cout << "Error in rational reconstruction. Ring size is too small" << std::endl;
+//			throw std::runtime_error(std::string("Error in rational reconstruction. Ring size is too small"));
+		}
 	}
 
 	num = v3;

@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
 		std::cout << ((!i)?"":", ");
 		std::cout << num << "/" << denom;
 
-		if (modelCrtDecoded[i] != model[i])
+		if (abs(modelCrtDecoded[i] - model[i]) > 0.3)
 			ok = false;
 	}
 	std::cout << std::endl;
