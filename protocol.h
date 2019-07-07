@@ -16,10 +16,14 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 	for (unsigned int col = 0; col < _X.cols(); ++col)
 		tempb[col].from_int(0);
 
+
+	PackedMatrixSet<Ciphertext> A_simd;
+
 	Matrix<Ciphertext> A(_X.cols(), _X.cols());
 	std::vector<Ciphertext> b(_X.cols());
 
 	Times::start_phase1_step2();
+
 	for (unsigned int i = 0; i < _X.rows(); ++i) {
 
 		for (unsigned int col = 0; col < _X.cols(); ++col)
@@ -30,6 +34,8 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 			tempb[col] += (_X(col,i).to_int() * _y[i].to_int());
 	}
 
+	A_simd.init_left_matrix(tempA);
+
 	for (unsigned int col = 0; col < _X.cols(); ++col)
 		for (unsigned int row = 0; row < _X.cols(); ++row)
 			A(col, row).from_int(tempA(col, row).to_int());
@@ -38,17 +44,19 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 		b[col].from_int(tempb[col].to_int());
 	Times::end_phase1_step2();
 
-	_communication_channel->send_A_and_b_to_server1(A, b);
+	_communication_channel->send_A_and_b_to_server1(A, A_simd, b);
 }
 
 template<class Plaintext, class Ciphertext>
-void Server1<Plaintext, Ciphertext>::receive_fraction_of_A_and_b(const Matrix<Ciphertext> &A, const std::vector<Ciphertext> &b) {
+void Server1<Plaintext, Ciphertext>::receive_fraction_of_A_and_b(const Matrix<Ciphertext> &A, const PackedMatrixSet<Ciphertext> &A_simd, const std::vector<Ciphertext> &b) {
 	Times::start_phase1_step3();
 	if (_A.cols() == 0) {
 		_A = A;
+		_A_simd = A_simd;
 		_b = b;
 	} else {
 		_A += A;
+		_A_simd += A_simd;
 		_b += b;
 	}
 	Times::end_phase1_step3();
@@ -57,8 +65,13 @@ void Server1<Plaintext, Ciphertext>::receive_fraction_of_A_and_b(const Matrix<Ci
 
 template<class Plaintext, class Ciphertext>
 void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std::vector<Ciphertext> &y) {
+//	std::cout << "server1 masking:  A = " << std::endl << _A << std::endl;
+//	std::cout << "server1 masking: A_simd = " << std::endl << _A_simd << std::endl;
+
 	_R.resize(_A.cols(), _A.rows());
 	_r.resize(_b.size());
+
+	PackedMatrix<Ciphertext> Aprime_simd;
 
 	Matrix<Ciphertext> Aprime;
 	std::vector<Ciphertext> bprime;
@@ -66,20 +79,24 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 	draw(_R);
 	draw(_r);
 
-	std::cout << "server1 A = " << std::endl << _A << std::endl;
+	PackedMatrixSet<Plaintext> R_simd;
+	R_simd.init_right_matrix(_R);
 
 	Times::start_phase2_step1();
 	mul(Aprime, _A, _R);
+	mul(Aprime_simd, _A_simd, R_simd);
+
 	mul(bprime, _A, _r);
 	add(bprime, _b);
 	Times::end_phase2_step1();
 
-	_communication_channel->send_Aprime_and_bprime_to_server2(Aprime, bprime);
+	_communication_channel->send_Aprime_and_bprime_to_server2(Aprime, Aprime_simd, bprime);
 }
 
 template<class Plaintext, class Ciphertext>
 void Server2<Plaintext, Ciphertext>::solve() {
 	Matrix<Plaintext> Aprime;
+	Matrix<Plaintext> Aprime_simd;
 	std::vector<Plaintext> bprime;
 
 	Times::start_phase2_step2();
@@ -89,6 +106,11 @@ void Server2<Plaintext, Ciphertext>::solve() {
 			Aprime(col, row) = _EncAprime(col, row).to_int();
 		}
 	}
+
+	_EncAprime_simd.to_matrix(Aprime_simd);
+
+	std::cout << "server2: Aprime = " << std::endl << Aprime << std::endl;
+	std::cout << "server2: Aprime_simd = " << std::endl << Aprime_simd << std::endl;
 
 	bprime.resize(_Encbprime.size());
 	for (unsigned int i = 0; i < bprime.size(); ++i) {

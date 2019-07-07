@@ -23,8 +23,10 @@ private:
 	static clock_t phase2_step2;
 	static clock_t phase2_step3;
 
-	static void print_start(int p, int s) { std::cout << "Starting phase" << p << "_step" << s << std::endl; }
-	static void print_end(int p, int s) { std::cout << "Ending phase" << p << "_step" << s << std::endl; }
+	static void print_start(int p, int s) {}
+	static void print_end(int p, int s) {}
+//	static void print_start(int p, int s) { std::cout << "Starting phase" << p << "_step" << s << std::endl; }
+//	static void print_end(int p, int s) { std::cout << "Ending phase" << p << "_step" << s << std::endl; }
 public:
 	static void start_phase1_step1() { print_start(1,1); phase1_step1 -= clock(); }
 	static void start_phase1_step2() { print_start(1,2); phase1_step2 -= clock(); }

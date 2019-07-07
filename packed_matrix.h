@@ -13,6 +13,18 @@ private:
 public:
 	PackedMatrix() : _matrixType(NONE), _cols(0), _rows(0) {}
 
+	PackedMatrix<Number> &operator=(const PackedMatrix<Number> &m) {
+		_matrixType = m._matrixType;
+		_cols = m._cols;
+		_rows = m._rows;
+
+		_ctxt.resize(m._ctxt.size());
+		for (unsigned int i = 0; i < _ctxt.size(); ++i) {
+			_ctxt[i] = m._ctxt[i];
+		}
+		return *this;
+	}
+
 	unsigned int cols() const { return _cols; }
 	unsigned int rows() const { return _rows; }
 
@@ -22,6 +34,28 @@ public:
 		int i_ctxt = i_item / simd_factor;
 		std::vector<long> a = _ctxt[i_ctxt].to_vector();
 		return a[i_item - i_ctxt * simd_factor];
+	}
+
+	template<class Out>
+	void to_matrix(Matrix<Out> &o) {
+		o.resize(_cols, _rows);
+		int simd_factor = _ctxt[0].simd_factor();
+		int i_ctxt = -1;
+		int i_slot = simd_factor;
+		std::vector<long> data;
+
+		for (unsigned int i_row = 0; i_row < _rows; ++i_row) {
+			for (unsigned int i_col = 0; i_col < _cols; ++i_col) {
+				if (i_slot == simd_factor) {
+					i_slot = 0;
+					++i_ctxt ;
+					data = _ctxt[i_ctxt].to_vector();
+				}
+
+				o(i_col, i_row).from_int(data[i_slot]);
+				++i_slot;
+			}
+		}
 	}
 
 	void init_matrix(int cols, int rows) {
@@ -73,7 +107,7 @@ public:
 				++i_simd;
 			}
 			_ctxt[i_ctxt].from_vector(serialMat);
-			std::cout << "after from_vector: " << _ctxt[i_ctxt] << std::endl;
+//			std::cout << "after from_vector: " << _ctxt[i_ctxt] << std::endl;
 		}
 	}
 
@@ -113,6 +147,18 @@ public:
 		}
 	}
 
+
+	void operator+=(const PackedMatrix<Number> &m) {
+		assert(_matrixType == m._matrixType);
+		assert(_cols == m._cols);
+		assert(_rows == m._rows);
+		assert(_ctxt.size() == m._ctxt.size());
+
+		for (unsigned int i = 0; i < _ctxt.size(); ++i) {
+			_ctxt[i] += m._ctxt[i];
+		}
+	}
+
 	template<class Out, class In1, class In2>
 	friend void add_mul(PackedMatrix<Out> &out, const PackedMatrix<In1> &left, const PackedMatrix<In2> &right);
 };
@@ -129,9 +175,22 @@ private:
 public:
 	PackedMatrixSet() : _matrixType(NONE), _cols(0), _rows(0) {}
 
+	PackedMatrixSet<Number> &operator=(const PackedMatrixSet<Number> &m) {
+		_matrixType = m._matrixType;
+		_cols = m._cols;
+		_rows = m._rows;
+
+		_mat.resize(m._mat.size());
+		for (unsigned int i = 0; i < _mat.size(); ++i) {
+			_mat[i] = m._mat[i];
+		}
+		return *this;
+	}
+
 	unsigned int cols() const { return _cols; }
 	unsigned int rows() const { return _rows; }
 
+	const std::vector<PackedMatrix<Number> > &mat() const { return _mat; }
 
 	template<class In>
 	void init_left_matrix(const Matrix<In> &m) {
@@ -144,10 +203,10 @@ public:
 			_mat[i].init_left_matrix(m, i);
 		}
 
-		std::cout << "Packed left matrix:" << std::endl;
-		for (unsigned int i = 0; i < m.cols(); ++i) {
-			std::cout << "   Rotation " << i << ": " << std::endl << _mat[i] << std::endl;
-		}
+//		std::cout << "Packed left matrix:" << std::endl;
+//		for (unsigned int i = 0; i < m.cols(); ++i) {
+//			std::cout << "   Rotation " << i << ": " << std::endl << _mat[i] << std::endl;
+//		}
 	}
 
 	template<class In>
@@ -161,9 +220,20 @@ public:
 			_mat[i].init_right_matrix(m, i);
 		}
 
-		std::cout << "Packed right matrix:" << std::endl;
-		for (unsigned int i = 0; i < m.cols(); ++i) {
-			std::cout << "   Rotation " << i << ":" << std::endl << _mat[i] << std::endl;
+//		std::cout << "Packed right matrix:" << std::endl;
+//		for (unsigned int i = 0; i < m.cols(); ++i) {
+//			std::cout << "   Rotation " << i << ":" << std::endl << _mat[i] << std::endl;
+//		}
+	}
+
+	void operator+=(const PackedMatrixSet<Number> &m) {
+		assert(_matrixType == m._matrixType);
+		assert(_cols == m._cols);
+		assert(_rows == m._rows);
+		assert(_mat.size() == m._mat.size());
+
+		for (unsigned int i = 0; i < _mat.size(); ++i) {
+			_mat[i] += m._mat[i];
 		}
 	}
 
@@ -178,13 +248,13 @@ void add_mul(PackedMatrix<Out> &out, const PackedMatrix<In1> &left, const Packed
 	assert(left._ctxt.size() == right._ctxt.size());
 
 	for (unsigned int i = 0; i < left._ctxt.size(); ++i) {
-		Out temp = left._ctxt[i] * right._ctxt[i];
-		std::cout << " mul = " << temp << std::endl;
+//		Out temp = left._ctxt[i] * right._ctxt[i];
+//		std::cout << " mul = " << temp << std::endl;
 		out._ctxt[i] += left._ctxt[i] * right._ctxt[i];
-		std::cout << " after adding = " << out._ctxt[i] << std::endl;
+//		std::cout << " after adding = " << out._ctxt[i] << std::endl;
 	}
 
-	std::cout << " after adding = " << std::endl << out << std::endl;
+//	std::cout << " after adding = " << std::endl << out << std::endl;
 }
 
 template<class Out, class In1, class In2>
@@ -195,7 +265,7 @@ void mul(PackedMatrix<Out> &out, const PackedMatrixSet<In1> &left, const PackedM
 	out.init_matrix(left.cols(), right.rows());
 
 	for (unsigned int i = 0; i < right._mat.size(); ++i) {
-		std::cout << "   Adding  rotation " << i << std::endl;
+//		std::cout << "   Adding  rotation " << i << std::endl;
 		add_mul(out, left._mat[i], right._mat[i]);
 	}
 }
@@ -210,5 +280,12 @@ std::ostream &operator<<(std::ostream &out, const PackedMatrix<Number> &m) {
 	}
 	return out;
 }
+
+template<class Number>
+std::ostream &operator<<(std::ostream &out, const PackedMatrixSet<Number> &m) {
+	out << m.mat()[0];
+	return out;
+}
+
 
 #endif
