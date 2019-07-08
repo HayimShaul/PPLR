@@ -21,9 +21,6 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 	PackedMatrixSet<Ciphertext> A_simd;
 	PackedVector<Ciphertext> b_simd;
 
-	Matrix<Ciphertext> A(_X.cols(), _X.cols());
-	std::vector<Ciphertext> b(_X.cols());
-
 	Times::start_phase1_step2();
 
 	for (unsigned int i = 0; i < _X.rows(); ++i) {
@@ -39,30 +36,20 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 	A_simd.init_left_matrix(tempA);
 	b_simd.init_vector(tempb);
 
-	for (unsigned int col = 0; col < _X.cols(); ++col)
-		for (unsigned int row = 0; row < _X.cols(); ++row)
-			A(col, row).from_int(tempA(col, row).to_int());
-
-	for (unsigned int col = 0; col < _X.cols(); ++col)
-		b[col].from_int(tempb[col].to_int());
 	Times::end_phase1_step2();
 
-	_communication_channel->send_A_and_b_to_server1(A, A_simd, b, b_simd);
+	_communication_channel->send_A_and_b_to_server1(A_simd, b_simd);
 }
 
 template<class Plaintext, class Ciphertext>
-void Server1<Plaintext, Ciphertext>::receive_fraction_of_A_and_b(const Matrix<Ciphertext> &A, const PackedMatrixSet<Ciphertext> &A_simd, const std::vector<Ciphertext> &b, const PackedVector<Ciphertext> &b_simd) {
+void Server1<Plaintext, Ciphertext>::receive_fraction_of_A_and_b(const PackedMatrixSet<Ciphertext> &A, const PackedVector<Ciphertext> &b) {
 	Times::start_phase1_step3();
 	if (_A.cols() == 0) {
 		_A = A;
-		_A_simd = A_simd;
 		_b = b;
-		_b_simd = b_simd;
 	} else {
 		_A += A;
-		_A_simd += A_simd;
 		_b += b;
-		_b_simd += b_simd;
 	}
 	Times::end_phase1_step3();
 }
@@ -79,11 +66,8 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 	_R.resize(_A.cols(), _A.rows());
 	_r.resize(_b.size());
 
-	PackedMatrix<Ciphertext> Aprime_simd;
-	PackedVector<Ciphertext> bprime_simd;
-
-	Matrix<Ciphertext> Aprime;
-	std::vector<Ciphertext> bprime;
+	PackedMatrix<Ciphertext> Aprime;
+	PackedVector<Ciphertext> bprime;
 
 	draw(_R);
 	draw(_r);
@@ -97,63 +81,24 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 	PackedMatrix<Ciphertext> Ar_simd;
 
 	Times::start_phase2_step1();
-	mul(Aprime, _A, _R);
-	mul(Aprime_simd, _A_simd, R_simd);
+	mul(Aprime, _A, R_simd);
 
-	mul(bprime, _A, _r);
-
-//	std::cout << "server1 A = " << std::endl << _A << std::endl;
-//	std::cout << "server1 r = " << _r << std::endl;
-//	std::cout << "server1 Ar = " << bprime << std::endl;
-
-	add(bprime, _b);
-
-
-
-
-//	std::cout << "server1 A_simd = " << std::endl << _A_simd << std::endl;
-//	std::cout << "server1 r_simd = " << r_simd << std::endl;
-
-
-	mul(Ar_simd, _A_simd, r_simd);
-//	std::cout << "server1 Ar_simd = " << Ar_simd << std::endl;
-	add(bprime_simd, Ar_simd, _b_simd);
-
-	std::cout << "server1 Aprime = " << Aprime << std::endl;
-	std::cout << "server1 Aprime_simd = " << Aprime_simd << std::endl;
-
-	std::cout << "server1 bprime = " << bprime << std::endl;
-	std::cout << "server1 bprime_simd = " << bprime_simd << std::endl;
+	mul(Ar_simd, _A, r_simd);
+	add(bprime, Ar_simd, _b);
 
 	Times::end_phase2_step1();
 
-	_communication_channel->send_Aprime_and_bprime_to_server2(Aprime, Aprime_simd, bprime, bprime_simd);
+	_communication_channel->send_Aprime_and_bprime_to_server2(Aprime, bprime);
 }
 
 template<class Plaintext, class Ciphertext>
 void Server2<Plaintext, Ciphertext>::solve() {
 	Matrix<Plaintext> Aprime;
-	Matrix<Plaintext> Aprime_simd;
 	std::vector<Plaintext> bprime;
 
 	Times::start_phase2_step2();
-	Aprime.resize(_EncAprime.cols(), _EncAprime.rows());
-	for (unsigned int col = 0; col < _EncAprime.cols(); ++col) {
-		for (unsigned int row = 0; row < _EncAprime.rows(); ++row) {
-			Aprime(col, row) = _EncAprime(col, row).to_int();
-		}
-	}
-
-	_EncAprime_simd.to_matrix(Aprime_simd);
-	_EncAprime_simd.to_matrix(Aprime);
-
-	std::cout << "server2: Aprime = " << std::endl << Aprime << std::endl;
-	std::cout << "server2: Aprime_simd = " << std::endl << Aprime_simd << std::endl;
-
-	bprime.resize(_Encbprime.size());
-	for (unsigned int i = 0; i < bprime.size(); ++i) {
-		bprime[i] = _Encbprime[i].to_int();
-	}
+	_EncAprime.to_matrix(Aprime);
+	_Encbprime.to_vector(bprime);
 
 	Matrix< Plaintext > Aprimeinv = Aprime.inverse();
 

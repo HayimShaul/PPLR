@@ -3,10 +3,8 @@
 
 template<class Plaintext, class Ciphertext>
 class Server2 {
-	Matrix<Ciphertext> _EncAprime;
-	PackedMatrix<Ciphertext> _EncAprime_simd;
-	std::vector<Ciphertext> _Encbprime;
-	PackedVector<Ciphertext> _Encbprime_simd;
+	PackedMatrix<Ciphertext> _EncAprime;
+	PackedVector<Ciphertext> _Encbprime;
 public:
 	Server2() {}
 
@@ -14,7 +12,7 @@ public:
 
 	void setCommunicationChannel(Communication<Plaintext, Ciphertext> *c) { _communication_channel = c; }
 
-	void receive_A_and_bfrom_server1(const Matrix<Ciphertext> &A, const PackedMatrix<Ciphertext> &A_simd, const std::vector<Ciphertext> &b, const PackedVector<Ciphertext> b_simd) { _EncAprime = A; _EncAprime_simd = A_simd; _Encbprime = b; _Encbprime_simd = b_simd; }
+	void receive_A_and_bfrom_server1(const PackedMatrix<Ciphertext> &A, const PackedVector<Ciphertext> b) { _EncAprime = A; _Encbprime = b; }
 
 	void solve();
 

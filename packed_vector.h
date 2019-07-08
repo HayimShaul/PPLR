@@ -43,7 +43,7 @@ public:
 			}
 
 			o[i].from_int(data[i_slot]);
-			++i;
+			++i_slot;
 		}
 	}
 
