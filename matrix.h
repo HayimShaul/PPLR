@@ -130,10 +130,10 @@ public:
 //		std::cout << "copy = " << copy << std::endl;
 //		std::cout << "ret = " << ret << std::endl;
 
-		std::function<void(int,int,int)> add_to_row = [&ret, &copy](int to, int from, int factor) {
+		std::function<void(int,int,int)> add_to_row = [&ret, &copy](int to, int from, long factor) {
 			for (unsigned int i_col = 0; i_col < ret.cols(); ++i_col) {
-				ret(i_col, to) += ret(i_col, from) * factor;
-				copy(i_col, to) += copy(i_col, from) * factor;
+				ret(i_col, to) += ret(i_col, from) * ZP(factor);
+				copy(i_col, to) += copy(i_col, from) * ZP(factor);
 			}
 		};
 

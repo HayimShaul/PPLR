@@ -23,7 +23,7 @@
 #include "protocol.h"
 
 typedef HelibNumber Ciphertext;
-typedef ZP<1> Plaintext;
+typedef ZP Plaintext;
 //typedef UnsignedWord<7, Ciphertext> Bits;
 //typedef int Plaintext;
 
@@ -193,6 +193,7 @@ int main(int argc, char **argv) {
 		keys.initKeys(s, R, p, r, d, c, k, 64, L, chosen_m, gens, ords);
 		HelibNumber::set_global_keys(&keys);
 		Plaintext::set_global_p(p);
+		Plaintext::set_global_simd_factor(keys.simd_factor());
 		Times::end_phase1_step1();
 
 		try {

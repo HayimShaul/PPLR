@@ -18,8 +18,8 @@
 
 #include "protocol.h"
 
-typedef ZP<20> Ciphertext;
-typedef ZP<20> Plaintext;
+typedef ZP Ciphertext;
+typedef ZP Plaintext;
 typedef UnsignedWord<7, Ciphertext> Bits;
 //typedef int Plaintext;
 

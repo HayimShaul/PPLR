@@ -145,6 +145,7 @@ void Server2<Plaintext, Ciphertext>::solve() {
 	}
 
 	_EncAprime_simd.to_matrix(Aprime_simd);
+	_EncAprime_simd.to_matrix(Aprime);
 
 	std::cout << "server2: Aprime = " << std::endl << Aprime << std::endl;
 	std::cout << "server2: Aprime_simd = " << std::endl << Aprime_simd << std::endl;
