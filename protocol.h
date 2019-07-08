@@ -1,6 +1,7 @@
 #include "times.h"
 #include "rational_reconstruction.h"
 #include "packed_matrix.h"
+#include "packed_vector.h"
 
 
 template<class Plaintext, class Ciphertext>
@@ -18,6 +19,7 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 
 
 	PackedMatrixSet<Ciphertext> A_simd;
+	PackedVector<Ciphertext> b_simd;
 
 	Matrix<Ciphertext> A(_X.cols(), _X.cols());
 	std::vector<Ciphertext> b(_X.cols());
@@ -35,6 +37,7 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 	}
 
 	A_simd.init_left_matrix(tempA);
+	b_simd.init_vector(tempb);
 
 	for (unsigned int col = 0; col < _X.cols(); ++col)
 		for (unsigned int row = 0; row < _X.cols(); ++row)
@@ -44,20 +47,22 @@ void DataSource<Plaintext, Ciphertext>::encode_data() {
 		b[col].from_int(tempb[col].to_int());
 	Times::end_phase1_step2();
 
-	_communication_channel->send_A_and_b_to_server1(A, A_simd, b);
+	_communication_channel->send_A_and_b_to_server1(A, A_simd, b, b_simd);
 }
 
 template<class Plaintext, class Ciphertext>
-void Server1<Plaintext, Ciphertext>::receive_fraction_of_A_and_b(const Matrix<Ciphertext> &A, const PackedMatrixSet<Ciphertext> &A_simd, const std::vector<Ciphertext> &b) {
+void Server1<Plaintext, Ciphertext>::receive_fraction_of_A_and_b(const Matrix<Ciphertext> &A, const PackedMatrixSet<Ciphertext> &A_simd, const std::vector<Ciphertext> &b, const PackedVector<Ciphertext> &b_simd) {
 	Times::start_phase1_step3();
 	if (_A.cols() == 0) {
 		_A = A;
 		_A_simd = A_simd;
 		_b = b;
+		_b_simd = b_simd;
 	} else {
 		_A += A;
 		_A_simd += A_simd;
 		_b += b;
+		_b_simd += b_simd;
 	}
 	Times::end_phase1_step3();
 }
@@ -68,10 +73,14 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 //	std::cout << "server1 masking:  A = " << std::endl << _A << std::endl;
 //	std::cout << "server1 masking: A_simd = " << std::endl << _A_simd << std::endl;
 
+//	std::cout << "server1 masking:  b = " << _b << std::endl;
+//	std::cout << "server1 masking: b_simd = " << _b_simd << std::endl;
+
 	_R.resize(_A.cols(), _A.rows());
 	_r.resize(_b.size());
 
 	PackedMatrix<Ciphertext> Aprime_simd;
+	PackedVector<Ciphertext> bprime_simd;
 
 	Matrix<Ciphertext> Aprime;
 	std::vector<Ciphertext> bprime;
@@ -82,15 +91,43 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 	PackedMatrixSet<Plaintext> R_simd;
 	R_simd.init_right_matrix(_R);
 
+	PackedMatrixSet<Plaintext> r_simd;
+	r_simd.init_right_vector(_r);
+
+	PackedMatrix<Ciphertext> Ar_simd;
+
 	Times::start_phase2_step1();
 	mul(Aprime, _A, _R);
 	mul(Aprime_simd, _A_simd, R_simd);
 
 	mul(bprime, _A, _r);
+
+//	std::cout << "server1 A = " << std::endl << _A << std::endl;
+//	std::cout << "server1 r = " << _r << std::endl;
+//	std::cout << "server1 Ar = " << bprime << std::endl;
+
 	add(bprime, _b);
+
+
+
+
+//	std::cout << "server1 A_simd = " << std::endl << _A_simd << std::endl;
+//	std::cout << "server1 r_simd = " << r_simd << std::endl;
+
+
+	mul(Ar_simd, _A_simd, r_simd);
+//	std::cout << "server1 Ar_simd = " << Ar_simd << std::endl;
+	add(bprime_simd, Ar_simd, _b_simd);
+
+	std::cout << "server1 Aprime = " << Aprime << std::endl;
+	std::cout << "server1 Aprime_simd = " << Aprime_simd << std::endl;
+
+	std::cout << "server1 bprime = " << bprime << std::endl;
+	std::cout << "server1 bprime_simd = " << bprime_simd << std::endl;
+
 	Times::end_phase2_step1();
 
-	_communication_channel->send_Aprime_and_bprime_to_server2(Aprime, Aprime_simd, bprime);
+	_communication_channel->send_Aprime_and_bprime_to_server2(Aprime, Aprime_simd, bprime, bprime_simd);
 }
 
 template<class Plaintext, class Ciphertext>

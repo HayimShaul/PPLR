@@ -23,6 +23,13 @@ typedef ZP<20> Plaintext;
 typedef UnsignedWord<7, Ciphertext> Bits;
 //typedef int Plaintext;
 
+std::ostream &operator<<(std::ostream &out, std::vector<Ciphertext> &v) {
+	for (unsigned int i = 0; i < v.size(); ++i) {
+		out << v[i].to_int() << " ";
+	}
+	return out;
+}
+
 #include "linear_regression.h"
 
 //int main2(int, char**) {

@@ -3,6 +3,7 @@
 
 #include <unsigned_word.h>
 #include "packed_matrix.h"
+#include "packed_vector.h"
 
 template<class Plaintext, class Ciphertext>
 class Server1 {
@@ -14,6 +15,7 @@ private:
 	std::vector<Ciphertext> _y;
 
 	PackedMatrixSet<Ciphertext> _A_simd;
+	PackedVector<Ciphertext> _b_simd;
 	Matrix<Ciphertext> _A;
 	std::vector<Ciphertext> _b;
 
@@ -25,7 +27,7 @@ public:
 
 	void setCommunicationChannel(Communication<Plaintext, Ciphertext> *c) { _communication_channel = c; }
 
-	void receive_fraction_of_A_and_b(const Matrix<Ciphertext> &a, const PackedMatrixSet<Ciphertext> &a_simd, const std::vector<Ciphertext> &b);
+	void receive_fraction_of_A_and_b(const Matrix<Ciphertext> &a, const PackedMatrixSet<Ciphertext> &a_simd, const std::vector<Ciphertext> &b, const PackedVector<Ciphertext> &b_simd);
 	void receive_X_and_y_from_data_source(const Matrix<Ciphertext> &a, const std::vector<Ciphertext> &b) { _X = a; _y = b; }
 	void receive_w_from_server2(const std::vector<Plaintext> &w) { _wprime = w; }
 
