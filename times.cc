@@ -1,9 +1,11 @@
 #include "times.h"
 
-clock_t Times::phase1_step1 = 0;
-clock_t Times::phase1_step2 = 0;
-clock_t Times::phase1_step3 = 0;
+TakeTimes Times::phase1_step1;
+TakeTimes Times::phase1_step2;
+TakeTimes Times::phase1_step3;
 
-clock_t Times::phase2_step1 = 0;
-clock_t Times::phase2_step2 = 0;
-clock_t Times::phase2_step3 = 0;
+TakeTimes Times::phase2_step1;
+TakeTimes Times::phase2_step2;
+TakeTimes Times::phase2_step3;
+
+pthread_mutex_t Times::mutex = PTHREAD_MUTEX_INITIALIZER;

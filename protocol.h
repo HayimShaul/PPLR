@@ -145,6 +145,9 @@ void Server1<Plaintext,Ciphertext>::linear_regression() {
 	unmask(w);
 
 	_communication_channel->send_w_to_DataSource(w);
+
+
+	Times::print(std::cout);
 }
 
 
