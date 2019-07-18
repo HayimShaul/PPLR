@@ -5,10 +5,10 @@
 #include <vector>
 
 struct CrtDigit {
-	int _base;
-	int _val;
+	long _base;
+	long _val;
 
-	CrtDigit(int v, int b) : _base(b), _val(v) { assert(v < b); }
+	CrtDigit(long v, long b) : _base(b), _val(v) { assert(v < b); }
 
 	int base() const { return _base; }
 	int val() const { return _val; }
@@ -24,8 +24,8 @@ inline int crtDecode(const std::vector<CrtDigit> &d) {
 	if (d.size() == 0)
 		return 0;
 
-	int ret = d[0].val();
-	int product = d[0].base();
+	long ret = d[0].val();
+	long product = d[0].base();
 	for (unsigned int i = 1; i < d.size(); ++i) {
 		ret += mod(ret - d[i].val(), d[i].base()) * product;
 		product *= d[i].base();

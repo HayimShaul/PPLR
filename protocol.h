@@ -96,16 +96,18 @@ void Server2<Plaintext, Ciphertext>::solve() {
 	Matrix<Plaintext> Aprime;
 	std::vector<Plaintext> bprime;
 
-	Times::start_phase2_step2();
+	Times::start_phase2_step2a();
 	_EncAprime.to_matrix(Aprime);
 	_Encbprime.to_vector(bprime);
+	Times::end_phase2_step2a();
 
+	Times::start_phase2_step2b();
 	Matrix< Plaintext > Aprimeinv = Aprime.inverse();
 
 	std::vector<Plaintext> wprime;
 	mul(wprime, Aprimeinv, bprime);
 
-	Times::end_phase2_step2();
+	Times::end_phase2_step2b();
 
 	_communication_channel->send_w_to_server1(wprime);
 }

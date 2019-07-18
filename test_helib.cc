@@ -1,3 +1,4 @@
+#include <sys/file.h>
 #include <vector>
 #include <istream>
 #include <fstream>
@@ -103,6 +104,7 @@ int myrand(int min, int max) {
 
 int main(int argc, char **argv) {
 	unsigned long p = 101;
+	int pi = -1;
 	int primeNumber = 1;
 	std::string in("");
 	int dim = 4;
@@ -114,6 +116,8 @@ int main(int argc, char **argv) {
 			L = atoi(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--p=", 4) == 0)
 			p = atol(argv[argc_i] + 4);
+		if (memcmp(argv[argc_i], "--pi=", 5) == 0)
+			pi = atol(argv[argc_i] + 5);
 		if (memcmp(argv[argc_i], "--n=", 4) == 0)
 			primeNumber = atoi(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--d=", 4) == 0)
@@ -167,49 +171,88 @@ int main(int argc, char **argv) {
 
 	std::vector<std::vector<CrtDigit> > crtDigitsOfModel(X.cols());
 	int ringSize = 1;
+	long helib_m;
+	long helib_simd;
 
 	unsigned long prime;
-	if (p < 1000000)
+	if (p < 100000)
 		prime = Primes::find_prime_bigger_than(p-1);
 	else
 		prime = p;
+	if (pi >= 0)
+		prime = Primes::prime(pi);
 	for (int i_prime = 0; i_prime < primeNumber; ++i_prime) {
-		std::cout << "prime " << i_prime << " = " << prime << std::endl;
-		ringSize *= prime;
+		helib_simd = 0;
+		while (helib_simd < dim*dim) {
+			std::cout << "prime " << i_prime << " = " << prime << std::endl;
+			ringSize *= prime;
 
-		HelibKeys keys;
-		long R = 1;
-		long p = prime;
-		long r = 1;
-		long d = 1;
-		long c = 2;
-		long k = 80;
-		long s = 0;
-		long chosen_m = 0;
-		Vec<long> gens;
-		Vec<long> ords;
+			HelibKeys keys;
+			long R = 1;
+			long p = prime;
+			long r = 1;
+			long d = 1;
+			long c = 2;
+			long k = 80;
+			long s = helib_simd+1;
+			long chosen_m = 0;
+			Vec<long> gens;
+			Vec<long> ords;
 
-		Times::start_phase1_step1();
-		keys.initKeys(s, R, p, r, d, c, k, 64, L, chosen_m, gens, ords);
-		HelibNumber::set_global_keys(&keys);
-		Plaintext::set_global_p(p);
-		Plaintext::set_global_simd_factor(keys.simd_factor());
-		Times::end_phase1_step1();
+			Times::start_phase1_step1();
+			keys.initKeys(s, R, p, r, d, c, k, 64, L, chosen_m, gens, ords);
+			HelibNumber::set_global_keys(&keys);
+			Plaintext::set_global_p(p);
+			Plaintext::set_global_simd_factor(keys.simd_factor());
+			helib_m = keys.m();
+			helib_simd = keys.simd_factor();
+			Times::end_phase1_step1();
 
-		try {
-			std::vector<int> linRegModelInt;
+			try {
+				std::vector<int> linRegModelInt;
 
-			clock_t start = clock();
-			linRegModelInt = linearRegression(X, y);
-			clock_t end = clock();
-			std::cout << "Took " << ((end-start)/1000000) << " seconds" << std::endl;
+				clock_t start = clock();
+				linRegModelInt = linearRegression(X, y);
+				clock_t end = clock();
+				std::cout << "Took " << ((end-start)/1000000) << " seconds" << std::endl;
 
-			for (unsigned int i_col = 0; i_col < X.cols(); ++i_col) {
-				crtDigitsOfModel[i_col].push_back(CrtDigit(linRegModelInt[i_col], prime));
+				for (unsigned int i_col = 0; i_col < X.cols(); ++i_col) {
+					crtDigitsOfModel[i_col].push_back(CrtDigit(linRegModelInt[i_col], prime));
+				}
+			} catch (Matrix<Plaintext>::InverseRuntimeError &e) {
+				std::cout << "prime " << prime << " gives a singular matrix. Skipping ..." << std::endl;
 			}
-		} catch (Matrix<Plaintext>::InverseRuntimeError &e) {
-			std::cout << "prime " << prime << " gives a singular matrix. Skipping ..." << std::endl;
+
+			// Record everything to output.csv
+			int lock_fd = open("output.csv.lock", O_RDWR | O_CREAT, 0666); // open or create lockfile
+			flock(lock_fd, LOCK_EX); // grab exclusive lock, fail if can'
+
+			std::ofstream csv;
+		
+			csv.open("output.csv", std::ios_base::app);
+			csv <<
+				prime << "," <<
+				helib_simd << "," <<
+				helib_m << "," <<
+				Times::time_phase1_step1() << "," << 
+				Times::time_phase1_step2() << "," << 
+				Times::time_phase1_step3() << "," << 
+				Times::time_phase2_step1() << "," << 
+				Times::time_phase2_step2a() << "," << 
+				Times::time_phase2_step2b() << "," << 
+				Times::time_phase2_step2() << "," << 
+				Times::time_phase2_step3() << "," << 
+				Times::time_server1() << "," << 
+				Times::time_server12() <<
+				std::endl;
+
+			flock(lock_fd, LOCK_UN); // grab exclusive lock, fail if can'
+			Times::reset();
+
+
+
 		}
+
 
 		prime = Primes::find_prime_bigger_than(prime+1);
 	}
@@ -242,9 +285,11 @@ int main(int argc, char **argv) {
 
 	Times::print(std::cout);
 
-	if (ok)
+	if (ok) {
 		std::cout << "OK" << std::endl;
-	else
+
+			
+	} else
 		std::cout << "FAIL" << std::endl;
 
 	return 0;
