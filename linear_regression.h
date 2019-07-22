@@ -21,11 +21,18 @@ void encode(Num &n, float f) {
 }
 
 std::vector<int> linearRegression(const Matrix<float> &X, const std::vector<float> &y) {
+	Server1<Plaintext, Ciphertext> server1;
+	Server2<Plaintext, Ciphertext> server2;
 	std::vector< DataSource<Plaintext, Ciphertext> > dataSource(DATA_SOURCE_NUMBER);
 
-	int rowsPerSource = (X.rows() + DATA_SOURCE_NUMBER - 1) / DATA_SOURCE_NUMBER;
+	Communication<Plaintext, Ciphertext> communication(dataSource, server1, server2);
 
-	for (int i_dataSource = 0; i_dataSource < DATA_SOURCE_NUMBER; ++i_dataSource) {
+	for (unsigned int i_dataSource = 0; i_dataSource < DATA_SOURCE_NUMBER; ++i_dataSource) {
+		DataSource<Plaintext, Ciphertext> d;
+		d.setCommunicationChannel(&communication);
+
+		int rowsPerSource = (X.rows() + DATA_SOURCE_NUMBER - 1) / DATA_SOURCE_NUMBER;
+
 		Matrix<Plaintext> encX;
 		std::vector<Plaintext> ency;
 
@@ -42,17 +49,9 @@ std::vector<int> linearRegression(const Matrix<float> &X, const std::vector<floa
 			}
 		}
 
-		dataSource[i_dataSource].set_data(encX, ency);
+		d.set_data(encX, ency);
+		d.encode_data();
 	}
-
-
-	Server1<Plaintext, Ciphertext> server1;
-	Server2<Plaintext, Ciphertext> server2;
-
-	Communication<Plaintext, Ciphertext> communication(dataSource, server1, server2);
-
-	for (unsigned int i = 0; i < dataSource.size(); ++i)
-		dataSource[i].encode_data();
 
 	server1.linear_regression();
 
