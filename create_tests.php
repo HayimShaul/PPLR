@@ -19,8 +19,26 @@ function act_pi($pi, $L, $d) {
 	print "\n";
 }
 
-for ($pi = 15; $pi < 7000; ++$pi) {
-	act_pi($pi, 3, '$(DIM)');
+for ($pi = 15; $pi < 1000; ++$pi) {
+//	act_pi($pi, 3, '$(DIM)');
+//	act_pi($pi, 3, '10');
+//	act_pi($pi, 3, '20');
+//	act_pi($pi, 3, '30');
+//	act_pi($pi, 3, '40');
+//	act_pi($pi, 3, '50');
+//	act_pi($pi, 3, '60');
+//	act_pi($pi, 3, '70');
+//	act_pi($pi, 3, '80');
+//	act_pi($pi, 3, '90');
+//	act_pi($pi, 3, '100');
+	act_pi($pi, 3, '120');
+	act_pi($pi, 3, '140');
+	act_pi($pi, 3, '160');
+	act_pi($pi, 3, '180');
+	act_pi($pi, 3, '200');
+	act_pi($pi, 3, '220');
+	act_pi($pi, 3, '240');
+	act_pi($pi, 3, '260');
 }
 
 #function act($p, $L, $d) {

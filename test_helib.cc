@@ -2,6 +2,7 @@
 #include <vector>
 #include <istream>
 #include <fstream>
+#include <sstream>
 #include <boost/tokenizer.hpp>
 
 //#include <zp.h>
@@ -138,7 +139,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-
 	Matrix<float> X;
 	std::vector<float> y;
 	std::vector<float> model(dim);
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
 		prime = Primes::prime(pi);
 	for (int i_prime = 0; i_prime < primeNumber; ++i_prime) {
 		helib_simd = 0;
-		while (helib_simd < dim*dim) {
+		while ((helib_simd < dim*dim) && (helib_simd < 1500)) {
 			std::cout << "prime " << i_prime << " = " << prime << std::endl;
 			ringSize *= prime;
 
@@ -229,21 +229,23 @@ int main(int argc, char **argv) {
 
 			std::ofstream csv;
 		
-			csv.open("output.csv", std::ios_base::app);
+			std::stringstream filename;
+			filename << "output-" << dim << ".csv";
+			csv.open(filename.str(), std::ios_base::app);
 			csv <<
-				prime << "," <<
-				helib_simd << "," <<
-				helib_m << "," <<
-				Times::time_phase1_step1() << "," << 
-				Times::time_phase1_step2() << "," << 
-				Times::time_phase1_step3() << "," << 
-				Times::time_phase2_step1() << "," << 
-				Times::time_phase2_step2a() << "," << 
-				Times::time_phase2_step2b() << "," << 
-				Times::time_phase2_step2() << "," << 
-				Times::time_phase2_step3() << "," << 
-				Times::time_server1() << "," << 
-				Times::time_server12() <<
+				prime << "," <<					// 1
+				helib_simd << "," <<				// 2
+				helib_m << "," <<				// 3
+				Times::time_phase1_step1() << "," << 		// 4
+				Times::time_phase1_step2() << "," << 		// 5
+				Times::time_phase1_step3() << "," << 		// 6
+				Times::time_phase2_step1() << "," << 		// 7
+				Times::time_phase2_step2a() << "," <<		// 8
+				Times::time_phase2_step2b() << "," <<		// 9
+				Times::time_phase2_step2() << "," << 		// 10
+				Times::time_phase2_step3() << "," << 		// 11
+				Times::time_server1() << "," <<      		// 12
+				Times::time_server12() <<			// 13
 				std::endl;
 
 			flock(lock_fd, LOCK_UN); // grab exclusive lock, fail if can'

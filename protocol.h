@@ -93,6 +93,8 @@ void Server1<Plaintext, Ciphertext>::mask(const Matrix<Ciphertext> &X, const std
 
 template<class Plaintext, class Ciphertext>
 void Server2<Plaintext, Ciphertext>::solve() {
+	Plaintext::set_global_simd_factor(1);
+
 	Matrix<Plaintext> Aprime;
 	std::vector<Plaintext> bprime;
 
