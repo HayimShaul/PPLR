@@ -173,46 +173,62 @@ int main(int argc, char **argv) {
 		prime = Primes::find_prime_bigger_than(p-1);
 	else
 		prime = p;
+
+	ThreadPool pool;
+
 	for (int i_prime = 0; i_prime < primeNumber; ++i_prime) {
-		std::cout << "prime " << i_prime << " = " << prime << std::endl;
 		ringSize *= prime;
 
-		HelibKeys keys;
-		long R = 1;
-		long p = prime;
-		long r = 1;
-		long d = 1;
-		long c = 2;
-		long k = 80;
-		long s = 0;
-		long chosen_m = 0;
-		Vec<long> gens;
-		Vec<long> ords;
+		pool.submit_job(std::function<void(void)>([prime, i_prime](){
+			std::cout << "prime " << i_prime << " = " << prime << std::endl;
 
-		Times::start_phase1_step1();
-		keys.initKeys(s, R, p, r, d, c, k, 64, L, chosen_m, gens, ords);
-		HelibNumber::set_global_keys(&keys);
-		Plaintext::set_global_p(p);
-		Plaintext::set_global_simd_factor(keys.simd_factor());
-		Times::end_phase1_step1();
+			// generate keys
+			HelibKeys keys;
+			long R = 1;
+			long p = prime;
+			long r = 1;
+			long d = 1;
+			long c = 2;
+			long k = 80;
+			long s = 0;
+			long chosen_m = 0;
+			Vec<long> gens;
+			Vec<long> ords;
 
-		try {
-			std::vector<int> linRegModelInt;
+			Times::start_phase1_step1();
+			keys.initKeys(s, R, p, r, d, c, k, 64, L, chosen_m, gens, ords);
 
-			clock_t start = clock();
-			linRegModelInt = linearRegression(X, y);
-			clock_t end = clock();
-			std::cout << "Took " << ((end-start)/1000000) << " seconds" << std::endl;
+			thread_data[pthrea_self()].keys = &keys;
+			thread_data[pthrea_self()].simd_factor = keys.simd_factor();
+			thread_data[pthrea_self()].p = p;
 
-			for (unsigned int i_col = 0; i_col < X.cols(); ++i_col) {
-				crtDigitsOfModel[i_col].push_back(CrtDigit(linRegModelInt[i_col], prime));
+			TODO: write the get_prime, get_keys functions, get_simd_factor
+//			HelibNumber::set_global_keys(&keys);
+//			Plaintext::set_global_p(p);
+//			Plaintext::set_global_simd_factor(keys.simd_factor());
+			Times::end_phase1_step1();
+
+			try {
+				std::vector<int> linRegModelInt;
+
+				linRegModelInt = linearRegression(X, y);
+
+				pthread_mutex_lock(&outputModel);
+				for (unsigned int i_col = 0; i_col < X.cols(); ++i_col) {
+					crtDigitsOfModel[i_col].push_back(CrtDigit(linRegModelInt[i_col], prime));
+				}
+				pthread_mutex_unlock(&outputModel);
+
+			} catch (Matrix<Plaintext>::InverseRuntimeError &e) {
+				std::cout << "prime " << prime << " gives a singular matrix. Skipping ..." << std::endl;
 			}
-		} catch (Matrix<Plaintext>::InverseRuntimeError &e) {
-			std::cout << "prime " << prime << " gives a singular matrix. Skipping ..." << std::endl;
-		}
+
+		}));
 
 		prime = Primes::find_prime_bigger_than(prime+1);
 	}
+
+	pool.process_jobs();
 
 	std::cout << "computed model after CRT = ";
 	std::vector<int> modelCrtDecoded(X.cols());
