@@ -1,6 +1,8 @@
+#include <sys/file.h>
 #include <vector>
 #include <istream>
 #include <fstream>
+#include <sstream>
 #include <boost/tokenizer.hpp>
 
 //#include <zp.h>
@@ -103,6 +105,7 @@ int myrand(int min, int max) {
 
 int main(int argc, char **argv) {
 	unsigned long p = 101;
+	int pi = -1;
 	int primeNumber = 1;
 	std::string in("");
 	int dim = 4;
@@ -114,6 +117,8 @@ int main(int argc, char **argv) {
 			L = atoi(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--p=", 4) == 0)
 			p = atol(argv[argc_i] + 4);
+		if (memcmp(argv[argc_i], "--pi=", 5) == 0)
+			pi = atol(argv[argc_i] + 5);
 		if (memcmp(argv[argc_i], "--n=", 4) == 0)
 			primeNumber = atoi(argv[argc_i] + 4);
 		if (memcmp(argv[argc_i], "--d=", 4) == 0)
@@ -133,7 +138,6 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 	}
-
 
 	Matrix<float> X;
 	std::vector<float> y;
@@ -167,22 +171,22 @@ int main(int argc, char **argv) {
 
 	std::vector<std::vector<CrtDigit> > crtDigitsOfModel(X.cols());
 	int ringSize = 1;
+	long helib_m;
+	long helib_simd;
 
 	unsigned long prime;
-	if (p < 1000000)
+	if (p < 100000)
 		prime = Primes::find_prime_bigger_than(p-1);
 	else
 		prime = p;
-
-	ThreadPool pool;
-
+	if (pi >= 0)
+		prime = Primes::prime(pi);
 	for (int i_prime = 0; i_prime < primeNumber; ++i_prime) {
-		ringSize *= prime;
-
-		pool.submit_job(std::function<void(void)>([prime, i_prime](){
+		helib_simd = 0;
+		while ((helib_simd < dim*dim) && (helib_simd < 1500)) {
 			std::cout << "prime " << i_prime << " = " << prime << std::endl;
+			ringSize *= prime;
 
-			// generate keys
 			HelibKeys keys;
 			long R = 1;
 			long p = prime;
@@ -190,45 +194,70 @@ int main(int argc, char **argv) {
 			long d = 1;
 			long c = 2;
 			long k = 80;
-			long s = 0;
+			long s = helib_simd+1;
 			long chosen_m = 0;
 			Vec<long> gens;
 			Vec<long> ords;
 
 			Times::start_phase1_step1();
 			keys.initKeys(s, R, p, r, d, c, k, 64, L, chosen_m, gens, ords);
-
-			thread_data[pthrea_self()].keys = &keys;
-			thread_data[pthrea_self()].simd_factor = keys.simd_factor();
-			thread_data[pthrea_self()].p = p;
-
-			TODO: write the get_prime, get_keys functions, get_simd_factor
-//			HelibNumber::set_global_keys(&keys);
-//			Plaintext::set_global_p(p);
-//			Plaintext::set_global_simd_factor(keys.simd_factor());
+			HelibNumber::set_global_keys(&keys);
+			Plaintext::set_global_p(p);
+			Plaintext::set_global_simd_factor(keys.simd_factor());
+			helib_m = keys.m();
+			helib_simd = keys.simd_factor();
 			Times::end_phase1_step1();
 
 			try {
 				std::vector<int> linRegModelInt;
 
+				clock_t start = clock();
 				linRegModelInt = linearRegression(X, y);
+				clock_t end = clock();
+				std::cout << "Took " << ((end-start)/1000000) << " seconds" << std::endl;
 
-				pthread_mutex_lock(&outputModel);
 				for (unsigned int i_col = 0; i_col < X.cols(); ++i_col) {
 					crtDigitsOfModel[i_col].push_back(CrtDigit(linRegModelInt[i_col], prime));
 				}
-				pthread_mutex_unlock(&outputModel);
-
 			} catch (Matrix<Plaintext>::InverseRuntimeError &e) {
 				std::cout << "prime " << prime << " gives a singular matrix. Skipping ..." << std::endl;
 			}
 
-		}));
+			// Record everything to output.csv
+			int lock_fd = open("output.csv.lock", O_RDWR | O_CREAT, 0666); // open or create lockfile
+			flock(lock_fd, LOCK_EX); // grab exclusive lock, fail if can'
+
+			std::ofstream csv;
+		
+			std::stringstream filename;
+			filename << "output-" << dim << ".csv";
+			csv.open(filename.str(), std::ios_base::app);
+			csv <<
+				prime << "," <<					// 1
+				helib_simd << "," <<				// 2
+				helib_m << "," <<				// 3
+				Times::time_phase1_step1() << "," << 		// 4
+				Times::time_phase1_step2() << "," << 		// 5
+				Times::time_phase1_step3() << "," << 		// 6
+				Times::time_phase2_step1() << "," << 		// 7
+				Times::time_phase2_step2a() << "," <<		// 8
+				Times::time_phase2_step2b() << "," <<		// 9
+				Times::time_phase2_step2() << "," << 		// 10
+				Times::time_phase2_step3() << "," << 		// 11
+				Times::time_server1() << "," <<      		// 12
+				Times::time_server12() <<			// 13
+				std::endl;
+
+			flock(lock_fd, LOCK_UN); // grab exclusive lock, fail if can'
+			Times::reset();
+
+
+
+		}
+
 
 		prime = Primes::find_prime_bigger_than(prime+1);
 	}
-
-	pool.process_jobs();
 
 	std::cout << "computed model after CRT = ";
 	std::vector<int> modelCrtDecoded(X.cols());
@@ -258,10 +287,13 @@ int main(int argc, char **argv) {
 
 	Times::print(std::cout);
 
-	if (ok)
+	if (ok) {
 		std::cout << "OK" << std::endl;
-	else
+
+			
+	} else
 		std::cout << "FAIL" << std::endl;
 
 	return 0;
 }
+
